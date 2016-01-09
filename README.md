@@ -1,5 +1,5 @@
 #BMP085 Driver for the STM32-F4 ARM Cortex-M4
-This driver uses I2C to collect Temperature, Pressure, and Altitude information from a Bosch BMP_085 Pressure sensor. It uses the BMP085's EOC pin in coordination with an external interrupt on the ARM microcontroller and is intended for inclusion in future IoT projects as well as my personal quadcopter/drone software. Average data aquisition speed to collect all readings is currently ~39 Hz. A simple timer library (TIM2) has been included for basic example usage.
+This driver uses I2C to collect Temperature, Pressure, and Altitude information from a Bosch BMP_085 Pressure sensor. It uses the BMP085's EOC pin in coordination with an external interrupt on the ARM microcontroller and is intended for inclusion in future IoT projects as well as my personal quadcopter/drone software. Average data acquisition speed to collect all readings is currently ~39 Hz. A simple timer library (TIM2) has been included for basic example usage.
 
 ##Requirements
 ###Hardware
