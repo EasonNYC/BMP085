@@ -14,6 +14,7 @@
 #include "stm32f4xx_exti.h"
 #include "stdio.h"
 #include "math.h"
+#include "timer.h"
 
 
 /** @addtogroup BMP085_Peripheral_Driver
@@ -44,22 +45,24 @@ static short b2 = 0xFFFF;
 static short mc = 0xFFFF;
 static short md = 0xFFFF;
 static long b5 =0x0;
+
 volatile uint8_t procflag = 0; 				//state machine counter
-uint8_t counter = 0; 									//used to calc update rate
-uint32_t PRESSURE_SEALEVEL = 102250;  //standard pressure at sealevel
+uint8_t counter = 0; 									//used to calc update rate (Hz)
+const uint32_t PRESSURE_SEALEVEL = 102250;  //pressure at sealevel in your area
 
 /**
 	* @struct BMP_READINGS
-  * @brief  A struct which holds the most current bmp readings.
+  * @brief  A struct which holds the most current bmp085 sensor readings.
   * @param  None
   * @retval None
   */
 struct BMP_READINGS {
-  float temperature;
-	uint32_t pressure;
-  float altitude;
-	uint16_t ut;
-	uint32_t up;
+  float temperature; //in Cel
+	uint32_t pressure; //in Pascals
+  float altitude; //in meters
+	uint16_t ut; 
+	uint32_t up; 
+	uint8_t hz; //sensor readings per second (Hz)
 } bmp;
 
 /**
@@ -506,11 +509,47 @@ uint32_t bmp085_calcP(uint32_t up, uint8_t OSS){
   * @retval Float of the current altitude in meters.
   */
 float bmp085_calcAlt(void){
-float x =  pow(bmp.pressure/PRESSURE_SEALEVEL, 0.190295F);
-float y = 1.0F-x;
-float altitude = 44330.0F * y;
-return 44330 * (1 - pow(((float) bmp.pressure/PRESSURE_SEALEVEL), 0.190295));
+	
+	float x =  pow(bmp.pressure/PRESSURE_SEALEVEL, 0.190295F);
+	float y = 1.0F-x;
+	float altitude = 44330.0F * y;
+		
+	return 44330 * (1 - pow(((float) bmp.pressure/PRESSURE_SEALEVEL), 0.190295));
+}
 
+/**
+  * @fn void reset_counter()
+  * @brief resets number of samples counted to 0. Used in calculating Hz.
+  * @param  None
+  * @retval None
+  */
+void bmp085_reset_counter(void){ counter = 0; }
+
+/**
+  * @fn void bmp085_save_counter(void)
+  * @brief saves number of samples counted so far to bmp_Readings struct. Used in calculating Hz.
+  * @param  None
+  * @retval None
+  */
+void bmp085_save_counter(void){ bmp.hz = counter; }
+
+/**
+  * @fn void bmp085_update_hz(void)
+  * @brief Main function which tracks how many readings per second the sensor is taking. Called every loop.
+  * @param  None
+  * @retval None
+  */
+void bmp085_update_hz(void) {
+	
+	//track bmp085 update rate (in Hz)
+	static volatile uint32_t time = 0;
+	if( millis() > (time + 1000)){
+		bmp085_save_counter(); //save Hz
+		time = millis();
+		bmp085_reset_counter(); //start over
+		
+}
+	
 }
 
 /**
@@ -521,6 +560,10 @@ return 44330 * (1 - pow(((float) bmp.pressure/PRESSURE_SEALEVEL), 0.190295));
   */
 void bmp085_run(void){
 	
+	//track readings per second
+	bmp085_update_hz();
+	
+		//handle state machine
 	switch(procflag){
 		case 0:
 			//state handled by IRQ 
@@ -542,26 +585,29 @@ void bmp085_run(void){
 			bmp.pressure = bmp085_calcP(bmp.up,3);
 			bmp.altitude = bmp085_calcAlt();
 			counter++;
-			bmp085_requestUT(); //start the next cycle
-			procflag = 0;
+			bmp085_requestUT(); //start over
+			procflag = 0; //reset state machine
 			break;
 		}
 	}
 
-	/**
+/**
   * @fn void bmp085_init()
   * @brief initializes bmp085 GPIO,I2C,exInt, calibrates and starts the state machine
   * @param  None
   * @retval None
   */
-	void bmp085_init(){
+void bmp085_init(){
 	
-		//initialize pins, I2C, and external interrupt
+  //initialize timer
+	TIM2_init();
+			
+	//initialize pins, I2C, and external interrupt
 	init_gpio();
 	init_i2c1();
 	init_ext_int();
 	
-		//initialize BMP085 and request a temperature reading (starts state machine)
+	//initialize BMP085 and request a temperature reading (starts state machine)
 	bmp085_calibration();	
   bmp085_requestUT();	
 }
@@ -574,16 +620,19 @@ void bmp085_run(void){
   */
 void bmp085_print(){
 	
-float far = bmp085_Conv_to_F(bmp085_getTemperature());
-	
-printf("Cel: %.2f C || Far: %.2f F || Pr: %d || Alt: %.2f ft|| Hz: %d\n", 
-	bmp085_getTemperature(),
-	far, 
-	bmp085_getPressure(), 
-	bmp085_get_altitude_feet(), 
-	counter);
+	float far = bmp085_Conv_to_F(bmp085_getTemperature());
+		
+	printf("Cel: %.2f C || Far: %.2f F || Pr: %d || Alt: %.2f ft|| Hz: %d\n", 
+		bmp085_getTemperature(),
+		far, 
+		bmp085_getPressure(), 
+		bmp085_get_altitude_feet(), 
+		bmp085_getHz());
 		 
 }
+
+
+
 
 /**
   * @fn float bmp085_getTemperature(void)
@@ -616,6 +665,14 @@ float bmp085_get_altitude_meters(void){return bmp.altitude; }
   * @retval float of altitude reading in feet
   */
 float bmp085_get_altitude_feet(void){ return bmp.altitude*3.28084F; }
+
+/**
+  * @fn uint32_t bmp085_getHz(void)
+  * @brief returns the update rate of readings from the sensor in Hz.
+  * @param  None
+  * @retval uint8_t of update rate in Hz.
+  */
+uint8_t bmp085_getHz(void){ return bmp.hz; }
 
 /**
 * @}

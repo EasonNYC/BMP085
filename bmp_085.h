@@ -30,5 +30,7 @@ uint32_t bmp085_getPressure(void);
 float bmp085_get_altitude_meters(void);
 float bmp085_get_altitude_feet(void);
 void bmp085_print(void);
+void bmp085_reset_counter(void);
+uint8_t bmp085_getHz(void);
 
 #endif

@@ -13,7 +13,7 @@
 #include <stdlib.h>
 #include "stm32f4xx.h"
 //#include "cmsis_os.h"    // RTOS object definitions
-#include "timer.h"       // for millis() functionality / refresh rate tracking
+//#include "timer.h"       // for millis() functionality / refresh rate tracking
 #include "bmp_085.h"     // pressure sensor
 
 
@@ -38,22 +38,19 @@ int main(void)
 	//bmp085 stuff	
 	bmp085_init();
 	
-	//timer + update rate stuff
-	TIM2_init();
-	extern uint8_t counter;
-	uint32_t volatile time = millis();
+	//timer for printing
+	uint32_t volatile time = 0;
 
 	while (1) {
 		
 		//collect bmp data
 	  bmp085_run();
 		
-		//track bmp update rate (in Hz) + print collected bmp data to the screen
+		//print collected bmp data to the screen every second
 	  if( millis() > (time + 1000)){
 		  bmp085_print();
 		  time = millis();
-		  counter = 0;
-		}
+		 }
 					
 	}
 		
