@@ -35,12 +35,10 @@ int main(void)
 	SystemInit();
 	init_systick();
 	
-	//bmp085 stuff	
+	//must be called once at startup	
 	bmp085_init();
 	
-	//timer for printing
 	uint32_t volatile time = 0;
-
 	while (1) {
 		
 		//collect bmp data
