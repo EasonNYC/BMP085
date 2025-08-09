@@ -39,8 +39,15 @@ while(!conversion_ready) {
 // This Driver's Interrupt Approach (Efficient)
 // CPU continues other tasks until EOC interrupt fires
 void EXTI0_IRQHandler(void) {
-    // Conversion ready! Process immediately
-    bmp085_process_reading();
+	
+	if (EXTI_GetITStatus(EXTI_Line0) != RESET) {
+			
+		//Conversion ready. Incriment state machine to process new data 
+		procflag++;
+				
+		//Clear interrupt flag
+		EXTI_ClearITPendingBit(EXTI_Line0);
+	}
 }
 ```
 
