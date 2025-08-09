@@ -37,8 +37,9 @@ Most BMP085 drivers use **polling methods** that waste CPU cycles waiting for se
 
 ```c
 // Traditional Polling Approach (Inefficient)
-while(!conversion_ready) {
+while((!ms_ticks() - prev_ticks) >= conversion_time) {
     // CPU wastefully waiting...
+    sleep();
 }
 
 // This Driver's Interrupt Approach (Efficient)
@@ -47,7 +48,7 @@ void EXTI0_IRQHandler(void) {
 	
 	if (EXTI_GetITStatus(EXTI_Line0) != RESET) {
 			
-		//Conversion ready. Incriment state machine to process new data 
+		//Conversion ready. Incriment state machine to process new data immediately
 		procflag++;
 				
 		//Clear interrupt flag
@@ -72,6 +73,11 @@ The driver implements a robust state machine for optimal sensor communication:
 ```
 
 ### ⚡ EOC Pin Timing Analysis
+
+<div align="center">
+  <img src="https://easonnyc.github.io/portfolio/assets/images/bmp085_eoc.png" alt="BMP085 Pressure Sensor" width="400">
+  <p><em>EOC pin on the scope</em></p>
+</div>
 
 The EOC pin behavior ensures optimal conversion timing:
 
@@ -234,20 +240,6 @@ doxygen Doxyfile
 
 ---
 
-## 🎯 Applications
-
-### 🚁 Ideal Use Cases
-- **Drone/Quadcopter Altitude Control**
-- **IoT Weather Monitoring Stations**
-- **Barometric Pressure Logging**
-- **Altitude-Based Location Services**
-- **Real-Time Environmental Monitoring**
-
-### 🏗️ System Integration
-This driver is designed to integrate seamlessly into larger embedded systems without blocking other critical operations.
-
----
-
 ## 📄 Resources & References
 
 ### 📋 Datasheets
@@ -266,16 +258,6 @@ This driver is designed to integrate seamlessly into larger embedded systems wit
 
 ### 📅 Development Timeline
 **December 2015** - Initial development and optimization
-
----
-
-## 🔮 Future Enhancements
-
-- [ ] **Configurable Pin Mapping** - Runtime pin assignment
-- [ ] **Multiple Sensor Support** - I2C bus sharing
-- [ ] **Advanced Filtering** - Digital signal processing
-- [ ] **Calibration Features** - Runtime offset adjustment
-- [ ] **Power Management** - Sleep/wake functionality
 
 ---
 
