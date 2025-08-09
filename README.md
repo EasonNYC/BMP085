@@ -9,6 +9,11 @@
   <img src="https://img.shields.io/badge/Interrupt-EOC%20Pin-yellow" alt="Interrupt">
 </div>
 
+<div align="center">
+  <img src="https://easonnyc.github.io/portfolio/assets/images/BMP185.jpg" alt="BMP085 Pressure Sensor" width="400">
+  <p><em>BMP085 Pressure Sensor</em></p>
+</div>
+
 ---
 
 ## 🌟 Project Overview
