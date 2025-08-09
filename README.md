@@ -37,9 +37,10 @@ Most BMP085 drivers use **polling methods** that waste CPU cycles waiting for se
 
 ```c
 // Traditional Polling Approach (Inefficient)
-while((!ms_ticks() - prev_ticks) >= conversion_time) {
-    // CPU wastefully waiting...
-    sleep();
+while(running) {
+    RequestTemp();
+    sleep(500); // CPU wastefully waiting...
+    ProcessTemp();
 }
 
 // This Driver's Interrupt Approach (Efficient)
